@@ -30,7 +30,7 @@ logging.basicConfig(
 )
 logging.info("Starting Personal Budget AI Agent")
 
-# --- Gemini AI Helper (ABSOLUTE MINIMUM FIX) ---
+# --- Gemini AI Helper  ---
 def ask_gemini(prompt: str):
     """Generates budget advice using the Gemini API."""
     if not GEMINI_API_KEY:
@@ -44,10 +44,8 @@ def ask_gemini(prompt: str):
         if prompt.lower() in greetings:
             return greetings[prompt.lower()]
 
-        # AI-generated response using the minimal syntax
-        model = genai.GenerativeModel('gemini-2.5-flash')
         
-        # Using generate_content directly with only the prompt, avoiding all keyword conflicts
+        model = genai.GenerativeModel('gemini-2.5-flash')
         response = model.generate_content(prompt)
         
         # Check if response text is available and return it
@@ -57,7 +55,6 @@ def ask_gemini(prompt: str):
             return "AI Error: Could not generate a response (filtered or empty)."
             
     except Exception as e:
-        # Check for authentication errors specifically
         if "API_KEY_INVALID" in str(e):
              logging.error(f"Gemini API Call Failed: Invalid Key")
              return "AI Error: The Gemini API Key appears to be invalid or expired. Please check your .env file."
@@ -72,7 +69,7 @@ INCOME_CSV = os.path.join(DATA_DIR, "income.csv")
 EXPENSES_CSV = os.path.join(DATA_DIR, "expenses.csv")
 GOALS_CSV = os.path.join(DATA_DIR, "goals.csv")
 
-# --- Data Loading (IMPROVED with st.cache_data) ---
+# --- Data Loading---
 @st.cache_data
 def load_df(path, cols):
     """Loads a DataFrame, caches it, and creates an empty one if not found."""
@@ -176,7 +173,7 @@ for i, row in income_df_calc.iterrows():
     income_df_calc.at[i, "Remaining"] = remaining
     income_df_calc.at[i, "Carry_Over"] = carry_over
 
-# Only save if there were changes, and use the calculated one for display
+
 income_df_calc.to_csv(INCOME_CSV, index=False)
 
 # Display tables
@@ -272,4 +269,5 @@ if user_input:
     
     advice = ask_gemini(context_prompt)
     st.markdown(f"**You:** {user_input}")
+
     st.markdown(f"**AI:** {advice}")
