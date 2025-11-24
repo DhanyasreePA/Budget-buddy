@@ -18,7 +18,6 @@ if not GEMINI_API_KEY:
 
 # --- Gemini SDK ---
 import google.generativeai as genai
-# Configure only if key is available
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
     
@@ -74,7 +73,6 @@ GOALS_CSV = os.path.join(DATA_DIR, "goals.csv")
 def load_df(path, cols):
     """Loads a DataFrame, caches it, and creates an empty one if not found."""
     try:
-        # Added parse_dates for proper date handling
         date_cols = ["Date"] if path == EXPENSES_CSV else [] 
         return pd.read_csv(path, parse_dates=date_cols) 
     except FileNotFoundError:
@@ -99,8 +97,6 @@ extra = st.sidebar.number_input("Extra Income", min_value=0.0, step=50.0)
 if st.sidebar.button("Save Income"):
     carry = 0.0
     if month in income_df["Month"].values:
-        # Note: Your original logic used a list for Carry_Over which is wrong if multiple rows existed (which they shouldn't). 
-        # Using .iloc[0] for safety.
         current_carry = income_df.loc[income_df["Month"]==month, "Carry_Over"]
         carry = current_carry.iloc[0] if not current_carry.empty else 0.0
         income_df.loc[income_df["Month"]==month, ["Income","Extra_Income","Carry_Over"]] = [income, extra, carry]
@@ -119,15 +115,11 @@ exp_date = st.sidebar.date_input("Expense Date", date.today())
 category = st.sidebar.selectbox("Category", ["Food","Transport","Entertainment","Bills","Others"])
 amount = st.sidebar.number_input("Amount", min_value=0.0, step=10.0)
 if st.sidebar.button("Add Expense"):
-   
     exp_date_str = exp_date.strftime("%Y-%m-%d") 
     exp_month = exp_date.strftime("%B")
-    
-  
     new_exp = pd.DataFrame([[exp_date_str, category, amount, exp_month]], columns=expenses_df.columns)
     expenses_df = pd.concat([expenses_df, new_exp], ignore_index=True)    
     expenses_df.to_csv(EXPENSES_CSV, index=False)
-    
     st.cache_data.clear() 
     st.sidebar.success(f"Added expense ₹{amount} for {category} on {exp_date}")
     st.rerun()
@@ -141,7 +133,6 @@ if st.sidebar.button("Save Goal"):
     [[goal_name, target_amt, 0.0, target_amt]],
     columns=goals_df.columns)
     goals_df = pd.concat([goals_df, new_goal], ignore_index=True)
-    
     goals_df.to_csv(GOALS_CSV, index=False)
     st.cache_data.clear() 
     st.sidebar.success(f"Goal '{goal_name}' saved!")
@@ -152,27 +143,19 @@ st.header("📊 Budget Overview & Goal Progress")
 
 income_df_calc = load_df(INCOME_CSV, ["Month","Income","Extra_Income","Carry_Over","Remaining"])
 expenses_df_calc = load_df(EXPENSES_CSV, ["Date","Category","Amount","Month"])
-
 expenses_df_calc["Date"] = pd.to_datetime(expenses_df_calc["Date"]) 
 expenses_df_calc["Month"] = expenses_df_calc["Date"].dt.strftime("%B") 
-
-
 income_df_calc = income_df_calc.sort_values("Month")
 carry_over = 0.0
 
 for i, row in income_df_calc.iterrows():
     month = row["Month"]
-    # Ensure we use the correct DataFrame for expense calculation
     spent = expenses_df_calc[expenses_df_calc["Month"]==month]["Amount"].sum()
-    
-    # Use float for calculations
     total_income = float(row["Income"]) + float(row["Extra_Income"]) + carry_over
     remaining = total_income - spent
     carry_over = max(remaining,0)
-    
     income_df_calc.at[i, "Remaining"] = remaining
     income_df_calc.at[i, "Carry_Over"] = carry_over
-
 
 income_df_calc.to_csv(INCOME_CSV, index=False)
 
@@ -271,3 +254,4 @@ if user_input:
     st.markdown(f"**You:** {user_input}")
 
     st.markdown(f"**AI:** {advice}")
+
